@@ -1,5 +1,6 @@
 package com.etudaintsystem.hospitalpatient.medical.repository;
 
+
 import com.etudaintsystem.hospitalpatient.medical.model.Seance;
 import com.etudaintsystem.hospitalpatient.medical.model.SeanceId;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,26 +18,10 @@ public interface SeanceRepository extends JpaRepository<Seance, SeanceId> {
 
     List<Seance> findBySoinCodeSoin(Long codeSoin);
 
-    List<Seance> findByDateSoin(LocalDate dateSoin);
-
-    @Query("SELECT s FROM Seance s WHERE s.patient.codeP = :codeP AND s.id.dateSoin BETWEEN :dateDebut AND :dateFin")
-    List<Seance> findByPatientAndDateBetween(
-            @Param("codeP") Long codeP,
+    @Query("SELECT s FROM Seance s WHERE s.dateSoin BETWEEN :dateDebut AND :dateFin")
+    List<Seance> findByDateSoinBetween(
             @Param("dateDebut") LocalDate dateDebut,
-            @Param("dateFin") LocalDate dateFin
-    );
+            @Param("dateFin") LocalDate dateFin);
 
     List<Seance> findByPatientCodePAndSoinCodeSoin(Long codeP, Long codeSoin);
-
-    List<Seance> findByDateSoinBetween(LocalDate dateDebut, LocalDate dateFin);
-
-    boolean existsByPatientCodePAndSoinCodeSoinAndDateSoin(Long codeP, Long codeSoin, LocalDate dateSoin);
-
-    boolean existsByPatientCodePAndSoinCodeSoinAndDateSoinAndHeure(Long codeP, Long codeSoin, LocalDate dateSoin, String heure);
-
-    @Query("SELECT s.patient.nomP, COUNT(s) FROM Seance s GROUP BY s.patient.nomP")
-    List<Object[]> countSeancesByPatient();
-
-    @Query("SELECT s.soin.designation, COUNT(s) FROM Seance s GROUP BY s.soin.designation")
-    List<Object[]> countSeancesBySoin();
 }

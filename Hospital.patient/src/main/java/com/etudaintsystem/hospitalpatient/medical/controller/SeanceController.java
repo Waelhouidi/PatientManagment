@@ -1,65 +1,69 @@
 package com.etudaintsystem.hospitalpatient.medical.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.etudaintsystem.hospitalpatient.medical.dto.SeanceDTO;
+import com.etudaintsystem.hospitalpatient.medical.service.SeanceService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.etudaintsystem.hospitalpatient.medical.service.SeanceService;
+import java.time.LocalDate;
+import java.util.List;
 
-/**
- * Controller for managing seances (treatment sessions).
- *
- * Note: This is a skeleton implementation since SeanceService is empty.
- * The methods will need to be updated once the SeanceService is implemented.
- */
 @RestController
 @RequestMapping("/api/seances")
-@CrossOrigin(origins = "*", maxAge = 3600)
+@RequiredArgsConstructor
 public class SeanceController {
 
-    @Autowired
-    private SeanceService seanceService;
+    private final SeanceService seanceService;
 
     @GetMapping
-    public ResponseEntity<?> getAllSeances() {
-        // To be implemented when SeanceService is available
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    public ResponseEntity<List<SeanceDTO>> getAllSeances() {
+        List<SeanceDTO> seances = seanceService.getAllSeances();
+        return ResponseEntity.ok(seances);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getSeanceById(@PathVariable Long id) {
-        // To be implemented when SeanceService is available
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-    }
-
-    @GetMapping("/patient/{patientId}")
-    public ResponseEntity<?> getSeancesByPatient(@PathVariable Long patientId) {
-        // To be implemented when SeanceService is available
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
-    }
-
-    @GetMapping("/soin/{soinId}")
-    public ResponseEntity<?> getSeancesBySoin(@PathVariable Long soinId) {
-        // To be implemented when SeanceService is available
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    @GetMapping("/{patientId}/{soinId}")
+    public ResponseEntity<SeanceDTO> getSeanceById(
+            @PathVariable Long patientId,
+            @PathVariable Long soinId) {
+        SeanceDTO seance = seanceService.getSeanceById(patientId, soinId);
+        return ResponseEntity.ok(seance);
     }
 
     @PostMapping
-    public ResponseEntity<?> createSeance(@RequestBody Object seanceRequest) {
-        // To be implemented when SeanceService is available
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    public ResponseEntity<SeanceDTO> createSeance(@Valid @RequestBody SeanceDTO seanceDTO) {
+        SeanceDTO createdSeance = seanceService.createSeance(seanceDTO);
+        return new ResponseEntity<>(createdSeance, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateSeance(@PathVariable Long id, @RequestBody Object seanceRequest) {
-        // To be implemented when SeanceService is available
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    @DeleteMapping("/{patientId}/{soinId}")
+    public ResponseEntity<Void> deleteSeance(
+            @PathVariable Long patientId,
+            @PathVariable Long soinId) {
+        seanceService.deleteSeance(patientId, soinId);
+        return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteSeance(@PathVariable Long id) {
-        // To be implemented when SeanceService is available
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<List<SeanceDTO>> getSeancesByPatient(@PathVariable Long patientId) {
+        List<SeanceDTO> seances = seanceService.getSeancesByPatient(patientId);
+        return ResponseEntity.ok(seances);
+    }
+
+    @GetMapping("/soin/{soinId}")
+    public ResponseEntity<List<SeanceDTO>> getSeancesBySoin(@PathVariable Long soinId) {
+        List<SeanceDTO> seances = seanceService.getSeancesBySoin(soinId);
+        return ResponseEntity.ok(seances);
+    }
+
+    @GetMapping("/date-range")
+    public ResponseEntity<List<SeanceDTO>> getSeancesByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin) {
+        List<SeanceDTO> seances = seanceService.getSeancesByDateRange(dateDebut, dateFin);
+        return ResponseEntity.ok(seances);
     }
 }

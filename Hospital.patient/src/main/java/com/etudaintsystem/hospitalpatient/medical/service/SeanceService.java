@@ -1,157 +1,100 @@
 package com.etudaintsystem.hospitalpatient.medical.service;
 
+import com.etudaintsystem.hospitalpatient.medical.dto.SeanceDTO;
+import com.etudaintsystem.hospitalpatient.medical.model.Patient;
 import com.etudaintsystem.hospitalpatient.medical.model.Seance;
 import com.etudaintsystem.hospitalpatient.medical.model.SeanceId;
-import com.etudaintsystem.hospitalpatient.medical.repository.SeanceRepository;
+import com.etudaintsystem.hospitalpatient.medical.model.Soin;
+import com.etudaintsystem.hospitalpatient.medical.exception.ResourceNotFoundException;
+import com.etudaintsystem.hospitalpatient.medical.mapper.SeanceMapper;
 import com.etudaintsystem.hospitalpatient.medical.repository.PatientRepository;
+import com.etudaintsystem.hospitalpatient.medical.repository.SeanceRepository;
 import com.etudaintsystem.hospitalpatient.medical.repository.SoinRepository;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class SeanceService {
 
-    @Autowired
-    private SeanceRepository seanceRepository;
-
-    @Autowired
-    private PatientRepository patientRepository;
-
-    @Autowired
-    private SoinRepository soinRepository;
+    private final SeanceRepository seanceRepository;
+    private final PatientRepository patientRepository;
+    private final SoinRepository soinRepository;
+    private final SeanceMapper seanceMapper;
 
     @Transactional(readOnly = true)
-    public List<Seance> getAllSeances() {
-        return seanceRepository.findAll();
+    public List<SeanceDTO> getAllSeances() {
+        return seanceRepository.findAll().stream()
+                .map(seanceMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public Optional<Seance> getSeanceById(SeanceId id) {
-        return seanceRepository.findById(id);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Seance> getSeancesByPatientId(Long patientId) {
-        return seanceRepository.findByPatientCodeP(patientId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Seance> getSeancesBySoinId(Long soinId) {
-        return seanceRepository.findBySoinCodeSoin(soinId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Seance> getSeancesByDate(LocalDate date) {
-        return seanceRepository.findByDateSoin(date);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Seance> getSeancesByDateRange(LocalDate startDate, LocalDate endDate) {
-        return seanceRepository.findByDateSoinBetween(startDate, endDate);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Seance> getSeancesByPatientAndDateRange(Long patientId, LocalDate startDate, LocalDate endDate) {
-        return seanceRepository.findByPatientAndDateBetween(patientId, startDate, endDate);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Seance> getSeancesByPatientAndSoin(Long patientId, Long soinId) {
-        return seanceRepository.findByPatientCodePAndSoinCodeSoin(patientId, soinId);
-    }
-
-    @Transactional(readOnly = true)
-    public boolean checkPatientSoinConflict(Long patientId, Long soinId, LocalDate date, String heure) {
-        return seanceRepository.existsByPatientCodePAndSoinCodeSoinAndDateSoinAndHeure(patientId, soinId, date, heure);
+    public SeanceDTO getSeanceById(Long patientId, Long soinId) {
+        SeanceId seanceId = new SeanceId(patientId, soinId);
+        Seance seance = seanceRepository.findById(seanceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Séance non trouvée"));
+        return seanceMapper.toDto(seance);
     }
 
     @Transactional
-    public Seance saveSeance(Seance seance) {
-        if (seance.getPatient() == null || seance.getPatient().getCodeP() == null) {
-            throw new RuntimeException("Patient est requis pour la séance.");
-        }
-        if (seance.getSoin() == null || seance.getSoin().getCodeSoin() == null) {
-            throw new RuntimeException("Soin est requis pour la séance.");
-        }
+    public SeanceDTO createSeance(SeanceDTO seanceDTO) {
+        Patient patient = patientRepository.findById(seanceDTO.getCodeP())
+                .orElseThrow(() -> new ResourceNotFoundException("Patient non trouvé avec l'ID: " + seanceDTO.getCodeP()));
 
-        patientRepository.findById(seance.getPatient().getCodeP())
-                .orElseThrow(() -> new RuntimeException("Patient non trouvé avec l'id: " + seance.getPatient().getCodeP()));
+        Soin soin = soinRepository.findById(seanceDTO.getCodeSoin())
+                .orElseThrow(() -> new ResourceNotFoundException("Soin non trouvé avec l'ID: " + seanceDTO.getCodeSoin()));
 
-        soinRepository.findById(seance.getSoin().getCodeSoin())
-                .orElseThrow(() -> new RuntimeException("Soin non trouvé avec l'id: " + seance.getSoin().getCodeSoin()));
+        SeanceId seanceId = new SeanceId(seanceDTO.getCodeP(), seanceDTO.getCodeSoin());
 
-        if (seance.getDateSoin() == null) {
-            seance.setDateSoin(LocalDate.now());
-        }
+        Seance seance = new Seance();
+        seance.setId(seanceId);
+        seance.setPatient(patient);
+        seance.setSoin(soin);
+        seance.setDateSoin(seanceDTO.getDateSoin());
 
-        // Mise à jour de l'ID composite
-        seance.setId(new SeanceId(seance.getPatient().getCodeP(), seance.getSoin().getCodeSoin(), seance.getDateSoin()));
-
-        return seanceRepository.save(seance);
+        seance = seanceRepository.save(seance);
+        return seanceMapper.toDto(seance);
     }
 
     @Transactional
-    public Seance updateSeance(SeanceId id, Seance seanceDetails) {
-        Seance seance = seanceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Séance non trouvée avec l'id: " + id));
-
-        seance.setDateSoin(seanceDetails.getDateSoin());
-        /*
-        seance.setHeure(seanceDetails.getHeure());
-        seance.setDuree(seanceDetails.getDuree());
-        seance.setObservations(seanceDetails.getObservations());*/
-
-        if (seanceDetails.getPatient() != null && seanceDetails.getPatient().getCodeP() != null) {
-            patientRepository.findById(seanceDetails.getPatient().getCodeP())
-                    .orElseThrow(() -> new RuntimeException("Patient non trouvé avec l'id: " + seanceDetails.getPatient().getCodeP()));
-            seance.setPatient(seanceDetails.getPatient());
+    public void deleteSeance(Long patientId, Long soinId) {
+        SeanceId seanceId = new SeanceId(patientId, soinId);
+        if (!seanceRepository.existsById(seanceId)) {
+            throw new ResourceNotFoundException("Séance non trouvée");
         }
-
-        if (seanceDetails.getSoin() != null && seanceDetails.getSoin().getCodeSoin() != null) {
-            soinRepository.findById(seanceDetails.getSoin().getCodeSoin())
-                    .orElseThrow(() -> new RuntimeException("Soin non trouvé avec l'id: " + seanceDetails.getSoin().getCodeSoin()));
-            seance.setSoin(seanceDetails.getSoin());
-        }
-
-        // Mise à jour de l'ID composite si la date, le patient ou le soin ont changé
-        seance.setId(new SeanceId(
-                seance.getPatient().getCodeP(),
-                seance.getSoin().getCodeSoin(),
-                seance.getDateSoin()
-        ));
-
-        return seanceRepository.save(seance);
-    }
-
-    @Transactional
-    public void deleteSeance(SeanceId id) {
-        Seance seance = seanceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Séance non trouvée avec l'id: " + id));
-        seanceRepository.delete(seance);
+        seanceRepository.deleteById(seanceId);
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Long> getSeanceCountByPatient() {
-        List<Object[]> results = seanceRepository.countSeancesByPatient();
-        Map<String, Long> seancesByPatient = new HashMap<>();
-        for (Object[] result : results) {
-            seancesByPatient.put((String) result[0], (Long) result[1]);
+    public List<SeanceDTO> getSeancesByPatient(Long patientId) {
+        if (!patientRepository.existsById(patientId)) {
+            throw new ResourceNotFoundException("Patient non trouvé avec l'ID: " + patientId);
         }
-        return seancesByPatient;
+        return seanceRepository.findByPatientCodeP(patientId).stream()
+                .map(seanceMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Long> getSeanceCountBySoin() {
-        List<Object[]> results = seanceRepository.countSeancesBySoin();
-        Map<String, Long> seancesBySoin = new HashMap<>();
-        for (Object[] result : results) {
-            seancesBySoin.put((String) result[0], (Long) result[1]);
+    public List<SeanceDTO> getSeancesBySoin(Long soinId) {
+        if (!soinRepository.existsById(soinId)) {
+            throw new ResourceNotFoundException("Soin non trouvé avec l'ID: " + soinId);
         }
-        return seancesBySoin;
+        return seanceRepository.findBySoinCodeSoin(soinId).stream()
+                .map(seanceMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<SeanceDTO> getSeancesByDateRange(LocalDate dateDebut, LocalDate dateFin) {
+        return seanceRepository.findByDateSoinBetween(dateDebut, dateFin).stream()
+                .map(seanceMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

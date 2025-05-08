@@ -1,102 +1,56 @@
 package com.etudaintsystem.hospitalpatient.medical.controller;
-
-import com.etudaintsystem.hospitalpatient.medical.model.Patient;
+import com.etudaintsystem.hospitalpatient.medical.dto.PatientDTO;
 import com.etudaintsystem.hospitalpatient.medical.service.PatientService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/patients")
+@RequiredArgsConstructor
 public class PatientController {
 
-    @Autowired
-    private PatientService patientService;
+    private final PatientService patientService;
 
     @GetMapping
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<Patient>> getAllPatients() {
-        List<Patient> patients = patientService.getAllPatients();
-        return new ResponseEntity<>(patients, HttpStatus.OK);
+    public ResponseEntity<List<PatientDTO>> getAllPatients() {
+        List<PatientDTO> patients = patientService.getAllPatients();
+        return ResponseEntity.ok(patients);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<Patient> getPatientById(@PathVariable Long id) {
-        Optional<Patient> patient = patientService.getPatientById(id);
-        return patient.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    @GetMapping("/search")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<Patient>> searchPatientsByNom(@RequestParam String nom) {
-        List<Patient> patients = patientService.getPatientsByNom(nom);
-        return new ResponseEntity<>(patients, HttpStatus.OK);
-    }
-
-    @GetMapping("/telephone/{numTel}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<Patient> getPatientByNumTel(@PathVariable String numTel) {
-        Optional<Patient> patient = patientService.getPatientByNumTel(numTel);
-        return patient.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    @GetMapping("/soin/{codeSoin}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<List<Patient>> getPatientsBySoin(@PathVariable Long codeSoin) {
-        List<Patient> patients = patientService.getPatientsBySoin(codeSoin);
-        return new ResponseEntity<>(patients, HttpStatus.OK);
+    public ResponseEntity<PatientDTO> getPatientById(@PathVariable Long id) {
+        PatientDTO patient = patientService.getPatientById(id);
+        return ResponseEntity.ok(patient);
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> createPatient(@RequestBody Patient patient) {
-        // Vérifier si le patient existe déjà
-        if (patientService.patientExists(patient.getNomP(), patient.getPrenomP(), patient.getNumTel())) {
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Un patient avec ce nom, prénom et numéro de téléphone existe déjà");
-            return new ResponseEntity<>(response, HttpStatus.CONFLICT);
-        }
-
-        Patient newPatient = patientService.savePatient(patient);
-        return new ResponseEntity<>(newPatient, HttpStatus.CREATED);
+    public ResponseEntity<PatientDTO> createPatient(@Valid @RequestBody PatientDTO patientDTO) {
+        PatientDTO createdPatient = patientService.createPatient(patientDTO);
+        return new ResponseEntity<>(createdPatient, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updatePatient(@PathVariable Long id, @RequestBody Patient patientDetails) {
-        try {
-            Patient updatedPatient = patientService.updatePatient(id, patientDetails);
-            return new ResponseEntity<>(updatedPatient, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            Map<String, String> response = new HashMap<>();
-            response.put("message", e.getMessage());
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-        }
+    public ResponseEntity<PatientDTO> updatePatient(
+            @PathVariable Long id,
+            @Valid @RequestBody PatientDTO patientDTO) {
+        PatientDTO updatedPatient = patientService.updatePatient(id, patientDTO);
+        return ResponseEntity.ok(updatedPatient);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> deletePatient(@PathVariable Long id) {
-        try {
-            patientService.deletePatient(id);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Patient supprimé avec succès");
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            Map<String, String> response = new HashMap<>();
-            response.put("message", e.getMessage());
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-        }
+    public ResponseEntity<Void> deletePatient(@PathVariable Long id) {
+        patientService.deletePatient(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<PatientDTO>> searchPatients(@RequestParam String query) {
+        List<PatientDTO> patients = patientService.searchPatients(query);
+        return ResponseEntity.ok(patients);
     }
 }
