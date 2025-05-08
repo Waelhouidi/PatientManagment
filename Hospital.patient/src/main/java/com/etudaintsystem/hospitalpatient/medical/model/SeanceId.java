@@ -1,18 +1,19 @@
 package com.etudaintsystem.hospitalpatient.medical.model;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Objects;
 
 @Embeddable
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class SeanceId implements Serializable {
@@ -31,11 +32,11 @@ public class SeanceId implements Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SeanceId seanceId = (SeanceId) o;
-        return Objects.equals(codeP, seanceId.codeP) &&
-                Objects.equals(codeSoin, seanceId.codeSoin) &&
-                Objects.equals(dateSoin, seanceId.dateSoin);
+        if (!(o instanceof SeanceId)) return false;
+        SeanceId that = (SeanceId) o;
+        return Objects.equals(codeP, that.codeP) &&
+                Objects.equals(codeSoin, that.codeSoin) &&
+                Objects.equals(dateSoin, that.dateSoin);
     }
 
     @Override

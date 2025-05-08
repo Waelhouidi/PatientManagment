@@ -17,6 +17,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Soin {
+    public Long getCodeSoin() {
+        return codeSoin;
+    }
+
+    public void setCodeSoin(Long codeSoin) {
+        this.codeSoin = codeSoin;
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

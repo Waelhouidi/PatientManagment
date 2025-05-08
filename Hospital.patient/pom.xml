@@ -105,6 +105,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Dépendance pour les Servlets -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>  <!-- Ou la dernière version disponible -->
+            <scope>provided</scope>  <!-- Cette dépendance est fournie par le conteneur Servlet (comme Tomcat) -->
+        </dependency>
 
     </dependencies>
 
@@ -135,8 +142,6 @@
                 </configuration>
             </plugin>
         </plugins>
-
-
     </build>
 
 </project>

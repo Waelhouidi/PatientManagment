@@ -1,12 +1,7 @@
 package com.etudaintsystem.hospitalpatient.medical.model;
 
-
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 
@@ -30,25 +25,59 @@ public class Seance {
     @JoinColumn(name = "code_soin")
     private Soin soin;
 
-    @NotNull(message = "La date du soin est obligatoire")
-    @PastOrPresent(message = "La date du soin ne peut pas être dans le futur")
-    @Column(name = "date_soin", nullable = false)
-    private LocalDate dateSoin;
-
-    // Constructeur pratique
+    /**
+     * Custom constructor with validation for convenience.
+     */
     public Seance(Patient patient, Soin soin, LocalDate dateSoin) {
+        if (dateSoin == null) {
+            throw new IllegalArgumentException("La date du soin est obligatoire.");
+        }
+        if (dateSoin.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("La date du soin ne peut pas être dans le futur.");
+        }
+
         this.patient = patient;
         this.soin = soin;
-        this.dateSoin = dateSoin;
-        this.id = new SeanceId(patient.getCodeP(), soin.getCodeSoin(), dateSoin);
+        this.id = new SeanceId(
+                patient != null ? patient.getCodeP() : null,
+                soin != null ? soin.getCodeSoin() : null,
+                dateSoin
+        );
     }
 
-    // Pour assurer la mise à jour de l'id composite
+    /**
+     * Returns the date of the seance from the embedded ID.
+     */
+    @Transient
+    public LocalDate getDateSoin() {
+        return id != null ? id.getDateSoin() : null;
+    }
+
+    /**
+     * Sets the date of the seance in the embedded ID.
+     */
+    @Transient
+    public void setDateSoin(LocalDate dateSoin) {
+        if (this.id == null) {
+            this.id = new SeanceId();
+        }
+        this.id.setDateSoin(dateSoin);
+    }
+
+    /**
+     * Keeps the embedded ID in sync before persisting or updating.
+     */
     @PrePersist
     @PreUpdate
     public void updateId() {
-        if (patient != null && soin != null && dateSoin != null) {
-            this.id = new SeanceId(patient.getCodeP(), soin.getCodeSoin(), dateSoin);
+        if (id == null) {
+            id = new SeanceId();
+        }
+        if (patient != null) {
+            id.setCodeP(patient.getCodeP());
+        }
+        if (soin != null) {
+            id.setCodeSoin(soin.getCodeSoin());
         }
     }
 }

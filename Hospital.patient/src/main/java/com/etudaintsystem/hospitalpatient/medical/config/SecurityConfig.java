@@ -1,8 +1,9 @@
 package com.etudaintsystem.hospitalpatient.medical.config;
 
 import com.etudaintsystem.hospitalpatient.medical.security.JwtAuthenticationEntryPoint;
-import com.etudaintsystem.hospitalpatient.medical.security.UserDetailsServiceImpl;
 import com.etudaintsystem.hospitalpatient.medical.security.JwtAuthenticationFilter;
+import com.etudaintsystem.hospitalpatient.medical.security.JwtUtils;
+import com.etudaintsystem.hospitalpatient.medical.security.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,10 +29,11 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthenticationEntryPoint unauthorizedHandler;
-
+    @Autowired
+    private JwtUtils jwtUtils;
     @Bean
     public JwtAuthenticationFilter authenticationJwtTokenFilter() {
-        return new JwtAuthenticationFilter();
+        return new JwtAuthenticationFilter(jwtUtils);
     }
 
     @Bean
@@ -67,5 +69,4 @@ public class SecurityConfig {
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }}
+        return http.build();}}
