@@ -1,4 +1,4 @@
-package com.etudaintsystem.hospitalpatient.medical.model;
+/*package com.etudaintsystem.hospitalpatient.medical.model;
 
 
 import jakarta.persistence.*;
@@ -43,4 +43,4 @@ public class User {
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
     private Set<String> roles = new HashSet<>();
-}
+}*/
